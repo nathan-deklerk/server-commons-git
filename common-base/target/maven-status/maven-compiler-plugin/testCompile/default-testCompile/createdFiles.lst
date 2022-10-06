@@ -1,0 +1,12 @@
+com/hiber/base/domain/PriceFormatUtilsTest.class
+com/hiber/base/integration/aws/sqs/VisibilityTimeoutCalculatorTest.class
+com/hiber/base/domain/EntityUtilsTest.class
+com/hiber/base/matcher/http/ResponseEntityMatcher.class
+com/hiber/base/rest/ControllerUtilsTest.class
+com/hiber/base/matcher/rest/model/ErrorDtoMatcher.class
+com/hiber/base/domain/EntityUtilsTest$ObjectWithId.class
+com/hiber/base/matcher/http/ResponseEntityMatcher$ErrorDtoResponseEntityMatcher.class
+com/hiber/base/domain/EntityUtilsTest$ProxiedObjectWithId$1.class
+com/hiber/base/matcher/http/ResponseEntityMatcher$ObjectResponseEntityMatcher.class
+com/hiber/base/domain/DateUtilTest.class
+com/hiber/base/domain/EntityUtilsTest$ProxiedObjectWithId.class

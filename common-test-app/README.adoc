@@ -1,0 +1,51 @@
+= Developer's Manual
+
+== Requirements
+
+. Java 11, at least update 2 (11.0.2)
+. Docker >= 17.03.1-ce
+
+[#project-building]
+== Project Building
+
+ ./mvnw clean verify
+
+[#project-running]
+== Project Running
+
+IMPORTANT: This section is related to the `common-test-app` module only.
+
+. Start Docker containers required by the project.
++
+ ./mvnw -pl common-test-app docker:stop docker:start -Ddocker.image.suffix=dev -Dlocal.localstack.sqs.port=6141 -Ddocker.poststart.cmd="sh /opt/project/data/init_ta_dev.sh"
++
+This command will start following containers:
++
+- a LocalStack instance (used only by this module) running a SQS service on port 6141.
++
+. Run the project using Maven
+
+ ./mvnw -pl common-test-app spring-boot:run
+
+== Tests Running
+
+IMPORTANT: This section is related to the `common-test-app` module only.
+
+All tests annotated by `@Tag("IntegrationTest")` will be run as integration tests, i.e. with configured Docker containers started.
+
+=== IntelliJ IDEA
+
+You need to start Docker containers to run integration tests. The command present in <<project-running>> runs containers configured in
+a such way that you can run integration tests from IDEA with one change. You need to add `-Dtest.sqs-port=6141` to the JUnit default run configuration.
+
+=== Maven
+
+If you started Docker containers as described in <<project-running>> you can run tests from Maven using the command below.
+
+ ./mvnw -pl common-test-app clean verify -Ddocker.skip=true -Dtest.sqs-port=6141 -Dtest.sqs-host=localhost
+
+This will shorten tests execution time as Maven won't start new Docker containers. You need to remember that depending on the
+state of the containers the tests may five false results.
+
+You can also run tests using the full build command as presented in <<project-building>>. This command will create new Docker
+containers each time.

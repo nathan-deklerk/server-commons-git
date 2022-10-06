@@ -1,0 +1,6 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.hiber.base.config.SupportConfig,\
+com.hiber.base.bugsnag.BugsnagConfig,\
+com.hiber.base.metrics.CustomMetricsAutoConfiguration,\
+com.hiber.base.queue.SqsQueueConsumersAutoConfiguration,\
+com.hiber.base.queue.SqsQueueProducersAutoConfiguration

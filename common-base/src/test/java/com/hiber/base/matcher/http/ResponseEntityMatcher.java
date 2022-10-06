@@ -1,0 +1,45 @@
+package com.hiber.base.matcher.http;
+
+import com.hiber.base.rest.model.ErrorDto;
+import com.mistraltech.smog.core.annotation.Matches;
+import org.hamcrest.Matcher;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import static com.mistraltech.smog.proxy.javassist.JavassistMatcherGenerator.matcherOf;
+
+@Matches(value = org.springframework.http.ResponseEntity.class, description = "a ResponseEntity")
+public interface ResponseEntityMatcher<P1> extends Matcher<ResponseEntity<P1>> {
+	ResponseEntityMatcher<P1> like(final ResponseEntity<P1> template);
+
+	ResponseEntityMatcher<P1> hasHeaders(final HttpHeaders headers);
+
+	ResponseEntityMatcher<P1> hasHeaders(final Matcher<? super HttpHeaders> headersMatcher);
+
+	ResponseEntityMatcher<P1> hasStatusCodeValue(final int statusCodeValue);
+
+	ResponseEntityMatcher<P1> hasStatusCodeValue(final Matcher<? super Integer> statusCodeValueMatcher);
+
+	ResponseEntityMatcher<P1> hasBody(final P1 body);
+
+	ResponseEntityMatcher<P1> hasBody(final Matcher<? super P1> bodyMatcher);
+
+	ResponseEntityMatcher<P1> hasStatusCode(final HttpStatus statusCode);
+
+	ResponseEntityMatcher<P1> hasStatusCode(final Matcher<? super HttpStatus> statusCodeMatcher);
+
+	@Matches(value = org.springframework.http.ResponseEntity.class, description = "a ResponseEntity")
+	interface ObjectResponseEntityMatcher extends ResponseEntityMatcher<Object> {
+		static ObjectResponseEntityMatcher anObjectResponseEntityMatcher() {
+			return matcherOf(ObjectResponseEntityMatcher.class);
+		}
+	}
+
+	@Matches(value = org.springframework.http.ResponseEntity.class, description = "a ResponseEntity")
+	interface ErrorDtoResponseEntityMatcher extends ResponseEntityMatcher<ErrorDto> {
+		static ErrorDtoResponseEntityMatcher anErrorDtoResponseEntityMatcher() {
+			return matcherOf(ErrorDtoResponseEntityMatcher.class);
+		}
+	}
+}

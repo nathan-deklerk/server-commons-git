@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.hiber</groupId>
+	<artifactId>common-test-app</artifactId>
+	<version>2.25.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>common-test-app</name>
+	<description>An app that is a subject for tests verifying various common configuration.</description>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.1.3.RELEASE</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+
+	<properties>
+		<amazonECSRegistry>localhost</amazonECSRegistry>
+		<docker.image.suffix>integration_test</docker.image.suffix>
+		<docker.image.tag>latest</docker.image.tag>
+		<docker.maven.plugin.fabric8.version>0.23.0</docker.maven.plugin.fabric8.version>
+		<docker.poststart.cmd>sh /opt/project/data/init_ta_default.sh</docker.poststart.cmd>
+		<docker.wait.time>60000</docker.wait.time>
+		<hiber.test.argLine>-Duser.timezone=UTC</hiber.test.argLine>
+		<java.version>11</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven.deploy.skip>true</maven.deploy.skip>
+		<maven.install.skip>true</maven.install.skip>
+		<!-- library versions -->
+		<hiber.common.version>${project.version}</hiber.common.version>
+		<spring-cloud.version>Greenwich.SR1</spring-cloud.version>
+		<spring-integration-aws.version>2.1.0.RELEASE</spring-integration-aws.version>
+		<buildNumber>undefined</buildNumber>
+	</properties>
+
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub nathan-deklerk Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/nathan-deklerk/server-commons</url>
+		</repository>
+	</distributionManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.hiber</groupId>
+			<artifactId>common-base</artifactId>
+			<version>${hiber.common.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-aws-messaging</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-sleuth</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-aws</artifactId>
+			<version>${spring-integration-aws.version}</version>
+		</dependency>
+
+
+		<!-- TEST dependencies -->
+		<dependency>
+			<groupId>com.hiber</groupId>
+			<artifactId>common-test</artifactId>
+			<version>${hiber.common.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.awaitility</groupId>
+			<artifactId>awaitility</artifactId>
+			<version>4.0.2</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<!-- Generates git.properties with information about source code revision. -->
+			<plugin>
+				<groupId>pl.project13.maven</groupId>
+				<artifactId>git-commit-id-plugin</artifactId>
+			</plugin>
+
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<jvmArguments>
+						-Duser.timezone=UTC
+					</jvmArguments>
+					<arguments>
+						<argument>
+							--spring.config.location=classpath:/,file:${project.basedir}/src/main/dev/config/
+						</argument>
+					</arguments>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<!-- Generates build-info.properties with information about build and project. -->
+							<goal>build-info</goal>
+						</goals>
+						<configuration>
+							<additionalProperties>
+								<number>${buildNumber}</number>
+							</additionalProperties>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<executions>
+					<!-- Allocates random ports as required by containers. -->
+					<execution>
+						<id>reserve-integration-ports</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>reserve-network-port</goal>
+						</goals>
+						<configuration>
+							<portNames>
+								<portName>local.localstack.sqs.port</portName>
+							</portNames>
+						</configuration>
+					</execution>
+					<!-- Set app.type variable to SNAPSHOT value (if SNAPSHOT version) -->
+					<execution>
+						<id>regex-properties</id>
+						<goals>
+							<goal>regex-properties</goal>
+						</goals>
+						<configuration>
+							<regexPropertySettings>
+								<regexPropertySetting>
+									<name>app.type</name>
+									<value>${project.version}</value>
+									<regex>.*-SNAPSHOT</regex>
+									<replacement>SNAPSHOT</replacement>
+									<failIfNoMatch>false</failIfNoMatch>
+								</regexPropertySetting>
+							</regexPropertySettings>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>io.fabric8</groupId>
+				<artifactId>docker-maven-plugin</artifactId>
+				<version>${docker.maven.plugin.fabric8.version}</version>
+				<configuration>
+					<images>
+						<!-- Configuration for a Localstack SQS instance for development and testing purposes. -->
+						<image>
+							<alias>hiber_ta_localstack_${docker.image.suffix}</alias>
+							<name>localstack/localstack:0.9.6</name>
+							<run>
+								<env>
+									<SERVICES>sqs</SERVICES>
+									<PORT_WEB_UI>8090</PORT_WEB_UI>
+								</env>
+								<namingStrategy>alias</namingStrategy>
+								<wait>
+									<log>Ready.</log>
+									<time>${docker.wait.time}</time>
+									<exec>
+										<postStart>${docker.poststart.cmd}</postStart>
+									</exec>
+								</wait>
+								<log>
+									<enabled>false</enabled>
+									<prefix>LOCALSTACK:></prefix>
+								</log>
+								<ports>
+									<port>local.localstack.sqs.port:4576</port>
+								</ports>
+								<volumes>
+									<bind>
+										<volume>${project.basedir}/src/main/dev/cloud:/opt/project/data</volume>
+										<volume>${project.basedir}/src/main/dev/sqs:/opt/project/data/sqs</volume>
+									</bind>
+								</volumes>
+							</run>
+						</image>
+					</images>
+					<removeVolumes>true</removeVolumes>
+				</configuration>
+
+				<executions>
+					<execution>
+						<id>docker-stop-existing</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>docker-start</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>start</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>docker-stop</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+					<!-- Configures generating a Docker image with the module. -->
+					<execution>
+						<goals>
+							<!-- Pushing to a Docker repository is not enabled, add a 'push' goal to enable it. -->
+							<goal>build</goal>
+						</goals>
+						<configuration>
+							<images>
+								<image>
+									<alias>${project.artifactId}</alias>
+									<registry>${amazonECSRegistry}/${project.artifactId}</registry>
+									<name>${amazonECSRegistry}/${project.artifactId}:${docker.image.tag}</name>
+									<build>
+										<from>openjdk:11.0.2-jre-slim</from>
+										<tags>
+											<tag>${docker.image.tag}</tag>
+											<tag>${project.version}</tag>
+											<!--suppress MavenModelInspection -->
+											<tag>${app.type}-${git.commit.id}</tag>
+										</tags>
+										<assembly>
+											<targetDir>/opt/${project.name}</targetDir>
+											<inline>
+												<dependencySets>
+													<dependencySet>
+														<useProjectArtifact>true</useProjectArtifact>
+														<includes>
+															<include>${project.groupId}:${project.artifactId}</include>
+														</includes>
+														<outputFileNameMapping>${project.build.finalName}.jar
+														</outputFileNameMapping>
+													</dependencySet>
+												</dependencySets>
+											</inline>
+										</assembly>
+										<ports>
+											<port>8080</port>
+										</ports>
+										<entryPoint>
+											<!-- @formatter:off -->
+											<shell>exec java $JAVA_OPTS -jar /opt/${project.name}/${project.build.finalName}.jar $JAVA_ARGS</shell>
+											<!-- @formatter:on -->
+										</entryPoint>
+									</build>
+								</image>
+							</images>
+							<removeVolumes>true</removeVolumes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Runs integration tests, i.e. tests tagged with 'IntegrationTest'. -->
+			<plugin>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<configuration>
+					<argLine>${hiber.test.argLine}</argLine>
+					<includes>
+						<include>**/*.java</include>
+					</includes>
+					<groups>IntegrationTest</groups>
+					<systemPropertyVariables>
+						<!--suppress MavenModelInspection -->
+						<test.sqs-port>${local.localstack.sqs.port}</test.sqs-port>
+						<!--suppress MavenModelInspection -->
+						<test.sqs-host>${docker.host.address}</test.sqs-host>
+					</systemPropertyVariables>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Runs unit tests, i.e. tests not tagged with 'IntegrationTest'. -->
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.22.2</version>
+				<configuration>
+					<argLine>${hiber.test.argLine}</argLine>
+					<excludedGroups>IntegrationTest</excludedGroups>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<profiles>
+		<profile>
+			<id>set-build-number</id>
+			<activation>
+				<property>
+					<name>env.BUILD_NUMBER</name>
+				</property>
+			</activation>
+			<properties>
+				<buildNumber>${env.BUILD_NUMBER}</buildNumber>
+			</properties>
+		</profile>
+	</profiles>
+</project>
