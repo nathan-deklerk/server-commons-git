@@ -37,7 +37,6 @@
 	<modules>
 		<module>common-base</module>
 		<module>common-test</module>
-		<module>common-test-app</module>
 	</modules>
 
 	<dependencies>
