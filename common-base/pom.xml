@@ -33,7 +33,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub nathan-deklerk Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/nathan-deklerk/server-commons</url>
+			<url>https://maven.pkg.github.com/nathan-deklerk/server-commons-git</url>
 		</repository>
 	</distributionManagement>
 
